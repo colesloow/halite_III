@@ -18,7 +18,8 @@ int main(int argc, char* argv[]) {
     unsigned int rng_seed;
     if (argc > 1) {
         rng_seed = static_cast<unsigned int>(stoul(argv[1]));
-    } else {
+    }
+    else {
         rng_seed = static_cast<unsigned int>(time(nullptr));
     }
     mt19937 rng(rng_seed);
@@ -31,35 +32,44 @@ int main(int argc, char* argv[]) {
 
     LOG("Toto")
 
-    for (;;) {
-        game.update_frame();
-        shared_ptr<Player> me = game.me;
-        unique_ptr<GameMap>& game_map = game.game_map;
+        for (;;) {
+            game.update_frame();
+            shared_ptr<Player> me = game.me;
+            unique_ptr<GameMap>& game_map = game.game_map;
 
-        vector<Command> command_queue;
+            vector<Command> command_queue;
 
-        for (const auto& ship_iterator : me->ships) {
-            shared_ptr<Ship> ship = ship_iterator.second;
-            if (game_map->at(ship)->halite < constants::MAX_HALITE / 10 || ship->is_full()) {
-                Direction random_direction = ALL_CARDINALS[rng() % 4];
-                command_queue.push_back(ship->move(random_direction));
-            } else {
-                command_queue.push_back(ship->stay_still());
+            for (const auto& ship_iterator : me->ships) {
+                shared_ptr<Ship> ship = ship_iterator.second;
+
+                // If ship is full, go back to shipyard
+                if (ship->is_full()) {
+                    Direction dir_to_yard = game_map->naive_navigate(ship, me->shipyard->position);
+                    command_queue.push_back(ship->move(dir_to_yard));
+                    continue;
+                }
+
+                if (game_map->at(ship)->halite < constants::MAX_HALITE / 10) {
+                    Direction random_direction = ALL_CARDINALS[rng() % 4];
+                    command_queue.push_back(ship->move(random_direction));
+                }
+                else {
+                    command_queue.push_back(ship->stay_still());
+                }
+            }
+
+            if (
+                game.turn_number <= 200 &&
+                me->halite >= constants::SHIP_COST &&
+                !game_map->at(me->shipyard)->is_occupied())
+            {
+                command_queue.push_back(me->shipyard->spawn());
+            }
+
+            if (!game.end_turn(command_queue)) {
+                break;
             }
         }
-
-        if (
-            game.turn_number <= 200 &&
-            me->halite >= constants::SHIP_COST &&
-            !game_map->at(me->shipyard)->is_occupied())
-        {
-            command_queue.push_back(me->shipyard->spawn());
-        }
-
-        if (!game.end_turn(command_queue)) {
-            break;
-        }
-    }
 
     return 0;
 }
