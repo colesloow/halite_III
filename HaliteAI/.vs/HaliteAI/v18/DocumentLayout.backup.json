@@ -1,0 +1,51 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\veron\\Downloads\\Halite3_C\u002B\u002B_Windows-x86\\Halite3_C\u002B\u002B_Windows-x86\\HaliteAI\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{C9237084-4A82-4CBC-BB1B-512C3E509486}|HaliteAI.vcxproj|C:\\Users\\veron\\Downloads\\Halite3_C\u002B\u002B_Windows-x86\\Halite3_C\u002B\u002B_Windows-x86\\MyBot.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C9237084-4A82-4CBC-BB1B-512C3E509486}|HaliteAI.vcxproj|C:\\Users\\veron\\Downloads\\Halite3_C\u002B\u002B_Windows-x86\\Halite3_C\u002B\u002B_Windows-x86\\hlt\\game.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "game.cpp",
+              "DocumentMoniker": "C:\\Users\\veron\\Downloads\\Halite3_C\u002B\u002B_Windows-x86\\Halite3_C\u002B\u002B_Windows-x86\\hlt\\game.cpp",
+              "RelativeDocumentMoniker": "..\\hlt\\game.cpp",
+              "ToolTip": "C:\\Users\\veron\\Downloads\\Halite3_C\u002B\u002B_Windows-x86\\Halite3_C\u002B\u002B_Windows-x86\\hlt\\game.cpp",
+              "RelativeToolTip": "..\\hlt\\game.cpp",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-11-18T12:59:30.894Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "MyBot.cpp",
+              "DocumentMoniker": "C:\\Users\\veron\\Downloads\\Halite3_C\u002B\u002B_Windows-x86\\Halite3_C\u002B\u002B_Windows-x86\\MyBot.cpp",
+              "RelativeDocumentMoniker": "..\\MyBot.cpp",
+              "ToolTip": "C:\\Users\\veron\\Downloads\\Halite3_C\u002B\u002B_Windows-x86\\Halite3_C\u002B\u002B_Windows-x86\\MyBot.cpp",
+              "RelativeToolTip": "..\\MyBot.cpp",
+              "ViewState": "AgIAABgAAAAAAAAAAAAAACwAAABGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-11-18T12:52:49.784Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
