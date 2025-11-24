@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     // As soon as you call "ready" function below, the 2 second per turn timer will start.
     game.ready("MyCppBot");
 
-    LOG("Toto")
+    //LOG("Toto")
 
         for (;;) {
             game.update_frame();
@@ -46,10 +46,8 @@ int main(int argc, char* argv[]) {
                 if (ship->is_full()) {
                     Direction dir_to_yard = game_map->naive_navigate(ship, me->shipyard->position);
                     command_queue.push_back(ship->move(dir_to_yard));
-                    continue;
                 }
-
-                if (game_map->at(ship)->halite < constants::MAX_HALITE / 10) {
+                else if (game_map->at(ship)->halite < constants::MAX_HALITE / 10) {
                     Direction random_direction = ALL_CARDINALS[rng() % 4];
                     command_queue.push_back(ship->move(random_direction));
                 }
