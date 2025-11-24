@@ -9,4 +9,6 @@ __pycache__/
 *.class
 *.ipr
 *.iws
-.vs
+.vs/
+HaliteAI/Debug
+HaliteAI/HaliteAI/Debug/
