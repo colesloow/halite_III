@@ -9,6 +9,14 @@ __pycache__/
 *.class
 *.ipr
 *.iws
+
+# Temp folders
 .vs/
 HaliteAI/Debug
 HaliteAI/HaliteAI/Debug/
+
+# Avoid pushing compilation
+HaliteAIDbg.pdb
+HaliteAIDbg.exe
+HaliteAI.pdb
+HaliteAI.exe
