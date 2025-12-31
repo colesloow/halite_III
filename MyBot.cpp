@@ -25,49 +25,54 @@ int main(int argc, char* argv[]) {
     mt19937 rng(rng_seed);
 
     Game game;
-    // At this point "game" variable is populated with initial map data.
-    // This is a good place to do computationally expensive start-up pre-processing.
-    // As soon as you call "ready" function below, the 2 second per turn timer will start.
-    game.ready("MyCppBot");
 
-    //LOG("Toto")
+    // Do any expensive pre-processing here; the per-turn 2s time limit starts after ready()
+    game.ready("Colinatole");
 
-        for (;;) {
-            game.update_frame();
-            shared_ptr<Player> me = game.me;
-            unique_ptr<GameMap>& game_map = game.game_map;
+    for (;;) {
+        game.update_frame();
+        shared_ptr<Player> me = game.me;
+        unique_ptr<GameMap>& game_map = game.game_map;
 
-            vector<Command> command_queue;
+        vector<Command> command_queue;
 
-            for (const auto& ship_iterator : me->ships) {
-                shared_ptr<Ship> ship = ship_iterator.second;
+        // TODO(step 2): Add persistent per-ship state (MINING/RETURNING) and a return threshold (not only full)
+        // TODO(step 3): Replace random wandering with target selection (pick richer cells / local search)
+        // TODO(step 4): Add collision avoidance between our own ships (reserve destinations each turn)
+        for (const auto& ship_iterator : me->ships) {
+            shared_ptr<Ship> ship = ship_iterator.second;
 
-                // If ship is full, go back to shipyard
-                if (ship->is_full()) {
-                    Direction dir_to_yard = game_map->naive_navigate(ship, me->shipyard->position);
-                    command_queue.push_back(ship->move(dir_to_yard));
-                }
-                else if (game_map->at(ship)->halite < constants::MAX_HALITE / 10) {
-                    Direction random_direction = ALL_CARDINALS[rng() % 4];
-                    command_queue.push_back(ship->move(random_direction));
-                }
-                else {
-                    command_queue.push_back(ship->stay_still());
-                }
+            // Step 1 (done):If ship is full, go back to shipyard to deposit
+            if (ship->is_full()) {
+                Direction dir_to_yard = game_map->naive_navigate(ship, me->shipyard->position);
+                command_queue.push_back(ship->move(dir_to_yard));
+            }
+            else if (game_map->at(ship)->halite < constants::MAX_HALITE / 10) {
+                Direction random_direction = ALL_CARDINALS[rng() % 4];
+                command_queue.push_back(ship->move(random_direction));
+            }
+            else {
+                command_queue.push_back(ship->stay_still());
             }
 
-            if (
-                game.turn_number <= 200 &&
-                me->halite >= constants::SHIP_COST &&
-                !game_map->at(me->shipyard)->is_occupied())
-            {
-                command_queue.push_back(me->shipyard->spawn());
-            }
-
-            if (!game.end_turn(command_queue)) {
-                break;
-            }
+            // TODO(step 6): Endgame recall: force returning when turns remaining is low
+            // TODO(step 8): Consider enemy proximity (risk, inspiration)
         }
+
+        // TODO(step 5): Improve spawn logic (stop earlier, avoid congestion)
+        if (
+            game.turn_number <= 200 &&
+            me->halite >= constants::SHIP_COST &&
+            !game_map->at(me->shipyard)->is_occupied())
+        {
+            command_queue.push_back(me->shipyard->spawn());
+        }
+
+        // TODO(step 7): Add dropoff creation logic (when/where to convert a ship)
+        if (!game.end_turn(command_queue)) {
+            break;
+        }
+    }
 
     return 0;
 }
