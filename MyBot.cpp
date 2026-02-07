@@ -79,6 +79,7 @@ Position pick_mining_target(const Position& ship_position, GameMap* game_map_ptr
 const int DROPOFF_COST = 4000;
 const int MIN_DIST_DROPOFF = 15;     // Mini distance between two dropoffs 
 const double REQUIRED_HALITE_RADIUS = 7000.0; // Total halite required in the area around the dropoff (5x5)
+const int MAX_DROPOFFS = 3;           // Arbitrary limit on number of dropoffs to prevent over-expansion
 
 // Compute total halite in a square area around a position (used for dropoff placement)
 int count_halite_in_area(const Position& center, GameMap* game_map, int radius) {
@@ -176,7 +177,7 @@ int main(int argc, char* argv[]) {
 			// Keeping a security margin (SHIP_COST) to be able to spawn after if needed
             if (me->halite >= DROPOFF_COST + constants::SHIP_COST &&
                 turns_remaining > 100 &&
-				me->dropoffs.size() < 2) // Arbitrary limit on number of dropoffs to prevent over-expansion, especially when the game just started
+				me->dropoffs.size() < MAX_DROPOFFS)
             {
 				// Check 1 : Distance with the shipyard
                 int dist_to_yard = game_map->calculate_distance(ship->position, me->shipyard->position);
