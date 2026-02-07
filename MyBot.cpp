@@ -43,12 +43,27 @@ int main(int argc, char* argv[]) {
         shared_ptr<Player> me = game.me;
         unique_ptr<GameMap>& game_map = game.game_map;
 
+        // Collision grid, empty grid initialized to false (indicating all cells are initially unoccupied)
+        vector<vector<bool>> next_turn_occupied(game_map->height, vector<bool>(game_map->width, false));
+
         vector<Command> command_queue;
 
-        // TODO(step 3): Replace random wandering with target selection (pick richer cells / local search)
-        // TODO(step 4): Add collision avoidance between our own ships (reserve destinations each turn)
+		// Marking enemy ship positions as occupied to avoid crashing into them
+        // Optional but safe to start with
+        // UPGRADE: can change for more aggressive play later
+        for (const auto& player_ptr : game.players) {
+            if (player_ptr->id == me->id) continue; // Ignoring our own ships for now
+            for (const auto& ship_pair : player_ptr->ships) {
+                // Marking enemy ship's current position as dangerous (simplification, since they can move)
+                // UPGRADE: Marking adjacent cells as well to account for their possible moves
+                Position pos = ship_pair.second->position;
+                next_turn_occupied[pos.y][pos.x] = true;
+            }
+        }
+
         for (const auto& ship_iterator : me->ships) {
             shared_ptr<Ship> ship = ship_iterator.second;
+            EntityId id = ship->id;
 
 			// Initialize ship state if ship is new
             if (ship_status.find(id) == ship_status.end()) {
@@ -121,18 +136,46 @@ int main(int argc, char* argv[]) {
                 }
             }
 
+			// Step 4 (done): Add collision avoidance between our own ships (reserve destinations each turn)
+            Command final_command = ship->stay_still(); // Don't move by default (in case we need to stay still due to collisions)
+			Position final_target = ship->position;     // Target position we intend to move to (initially our current position)
+
+			// Checking the intended move's target position, if it's occupied, we stay still
+			// UPGRADE: Checking adjacent cells for an alternative move
+
+            Position target_pos = game_map->normalize(ship->position.directional_offset(intended_direction));
+
+			// If cell is free in the next turn, we can move there
+            if (!next_turn_occupied[target_pos.y][target_pos.x]) {
+                final_command = ship->move(intended_direction);
+                final_target = target_pos;
+            }
+            else {
+                // Otherwise, we stay still to avoid collision
+                // BUT if we stay still, we need to make sure to mark our current position as occupied
+				// Since every ship move in order, if we stay still, we will occupy our current cell in the next turn
+                // So it should be safe
+                final_command = ship->stay_still();
+                final_target = ship->position;
+            }
+
+			// Marking the final target position as occupied
+            next_turn_occupied[final_target.y][final_target.x] = true;
 
             command_queue.push_back(final_command);
             // TODO(step 8): Consider enemy proximity (risk, inspiration)
         }
 
         // TODO(step 5): Improve spawn logic (stop earlier, avoid congestion)
+        Position yard_pos = me->shipyard->position;
         if (
             game.turn_number <= 200 &&
             me->halite >= constants::SHIP_COST &&
-            !game_map->at(me->shipyard)->is_occupied())
+			!next_turn_occupied[yard_pos.y][yard_pos.x]) // Spawning only if the shipyard cell is not occupied for the next turn
         {
             command_queue.push_back(me->shipyard->spawn());
+			// Marking shipyard position as occupied for the next turn to prevent collisions with newly spawned ship
+            next_turn_occupied[yard_pos.y][yard_pos.x] = true;
         }
 
         // TODO(step 7): Add dropoff creation logic (when/where to convert a ship)
