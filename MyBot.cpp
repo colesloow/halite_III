@@ -54,6 +54,14 @@ int main(int argc, char* argv[]) {
             if (ship_status.find(id) == ship_status.end()) {
                 ship_status[id] = ShipState::MINING;
             }
+
+			// Step 6 (done): Endgame recall: force returning when remaining turns are low
+            int dist_to_yard = game_map->calculate_distance(ship->position, me->shipyard->position);
+			int turns_remaining = constants::MAX_TURNS - game.turn_number;
+			if (turns_remaining < dist_to_yard + 10) { // 10 is a safety margin
+                ship_status[id] = ShipState::RETURNING;
+            }
+
 			// Step 2 (done): Add persistent per-ship state machine (MINING/RETURNING)
             if (ship_status[id] == ShipState::RETURNING) {
                 if (ship->position == me->shipyard->position) {
