@@ -47,6 +47,8 @@ int main(int argc, char* argv[]) {
 
     for (;;) {
         game.update_frame();
+        int turns_remaining = constants::MAX_TURNS - game.turn_number;
+
         shared_ptr<Player> me = game.me;
         unique_ptr<GameMap>& game_map = game.game_map;
 
@@ -79,7 +81,6 @@ int main(int argc, char* argv[]) {
 
 			// Step 6 (done): Endgame recall: force returning when remaining turns are low
             int dist_to_yard = game_map->calculate_distance(ship->position, me->shipyard->position);
-			int turns_remaining = constants::MAX_TURNS - game.turn_number;
 			if (turns_remaining < dist_to_yard + 10) { // 10 is a safety margin
                 ship_status[id] = ShipState::RETURNING;
             }
@@ -175,8 +176,6 @@ int main(int argc, char* argv[]) {
 
         // Step 5 (done): Improve spawn logic (stop earlier, avoid congestion)
         Position yard_pos = me->shipyard->position;
-
-        int turns_remaining = constants::MAX_TURNS - game.turn_number;
 
         // Count our ships close to shipyard to avoid congestion
         int nearby_ships = 0;
