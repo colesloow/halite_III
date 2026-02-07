@@ -122,14 +122,22 @@ int main(int argc, char* argv[]) {
                     Direction best_dir = Direction::STILL;
 
                     for (const auto& dir : ALL_CARDINALS) {
-                        Position target_pos = ship->position.directional_offset(dir);
-						// Check if the target cell is not occupied by another ship (collision avoidance)
-                        if (!game_map->at(target_pos)->is_occupied()) {
-                            int halite_at_target = game_map->at(target_pos)->halite;
-                            if (halite_at_target > max_halite) {
-                                max_halite = halite_at_target;
-                                best_dir = dir;
-                            }
+                        Position target_pos = game_map->normalize(ship->position.directional_offset(dir));
+
+                        // Skip cells already reserved for next turn (prevents internal conflitcs)
+                        if (next_turn_occupied[target_pos.y][target_pos.x]) {
+                            continue;
+                        }
+
+                        // Skip cells currently occupied (basic collision avoidance)
+                        if (game_map->at(target_pos)->is_occupied()) {
+                            continue;
+                        }
+
+                        int halite_at_target = game_map->at(target_pos)->halite;
+                        if (halite_at_target > max_halite) {
+                            max_halite = halite_at_target;
+                            best_dir = dir;
                         }
                     }
 
@@ -141,6 +149,19 @@ int main(int argc, char* argv[]) {
                         // Otherwise, fallback to random movement to avoid getting stuck
                         intended_direction = ALL_CARDINALS[rng() % 4];
                     }
+                }
+            }
+
+            // Movement cost safety: do not issue a move we cannot afford
+            if (intended_direction != Direction::STILL) {
+                int origin_halite = game_map->at(ship)->halite;
+                int ratio = constants::MOVE_COST_RATIO;
+
+                // Engine move cost is based on halite in the origin cell(use ceil division for safety)
+                int move_cost = (origin_halite + ratio - 1) / ratio;
+
+                if (ship->halite < move_cost) {
+                    intended_direction = Direction::STILL;
                 }
             }
 
