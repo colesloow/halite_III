@@ -299,6 +299,10 @@ int main(int argc, char* argv[]) {
 
                     // If we cannot move toward the target, try any free cardinal move to avoid deadlocks
                     if (chosen_direction == Direction::STILL) {
+						// Checking all cardinal directions and take the best onethat is not occupied
+                        Direction best_dir = Direction::STILL;
+                        int min_dist = 9999;
+
                         for (const auto& dir : ALL_CARDINALS) {
                             Position candidate = game_map->normalize(ship->position.directional_offset(dir));
 
@@ -310,11 +314,15 @@ int main(int argc, char* argv[]) {
                                 continue;
                             }
 
-                            chosen_direction = dir;
-                            break;
+							// Checking if this candidate is closer to the target than our current position
+                            int dist = game_map->calculate_distance(candidate, current_target);
+                            if (dist < min_dist) {
+                                min_dist = dist;
+                                best_dir = dir;
+                            }
+							chosen_direction = best_dir;
                         }
                     }
-
                     intended_direction = chosen_direction;
                 }
             }
