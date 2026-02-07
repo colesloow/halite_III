@@ -75,6 +75,22 @@ Position pick_mining_target(const Position& ship_position, GameMap* game_map_ptr
     return best_position;
 }
 
+// Dropoff tuning (step 7)
+const int DROPOFF_COST = 4000;
+const int MIN_DIST_DROPOFF = 15;     // Mini distance between two dropoffs 
+const double REQUIRED_HALITE_RADIUS = 7000.0; // Total halite required in the area around the dropoff (5x5)
+
+// Compute total halite in a square area around a position (used for dropoff placement)
+int count_halite_in_area(const Position& center, GameMap* game_map, int radius) {
+    int total_halite = 0;
+    for (int dy = -radius; dy <= radius; ++dy) {
+        for (int dx = -radius; dx <= radius; ++dx) {
+            Position pos = game_map->normalize(center + Position{ dx, dy });
+            total_halite += game_map->at(pos)->halite;
+        }
+    }
+    return total_halite;
+}
 
 int main(int argc, char* argv[]) {
     unsigned int rng_seed;
@@ -154,6 +170,47 @@ int main(int argc, char* argv[]) {
         for (const auto& ship_iterator : me->ships) {
             shared_ptr<Ship> ship = ship_iterator.second;
             EntityId id = ship->id;
+
+			// Dropoff construction logic (step 7)
+			// Construction is considered only if we have the budget and enough time left
+			// Keeping a security margin (SHIP_COST) to be able to spawn after if needed
+            if (me->halite >= DROPOFF_COST + constants::SHIP_COST &&
+                turns_remaining > 100 &&
+				me->dropoffs.size() < 2) // Arbitrary limit on number of dropoffs to prevent over-expansion, especially when the game just started
+            {
+				// Check 1 : Distance with the shipyard
+                int dist_to_yard = game_map->calculate_distance(ship->position, me->shipyard->position);
+
+				// Check 2 : Distance with other dropoffs
+                bool too_close = false;
+                for (const auto& dropoff : me->dropoffs) {
+                    if (game_map->calculate_distance(ship->position, dropoff.second->position) < MIN_DIST_DROPOFF) {
+                        too_close = true;
+                        break;
+                    }
+                }
+
+                // If we're far enough from existing structures and the cell doesn't already have a structure
+                if (dist_to_yard >= MIN_DIST_DROPOFF && !too_close && !game_map->at(ship)->has_structure()) {
+
+                    // Check 3 : Halite in the area (radius of 4)
+                    int local_halite = count_halite_in_area(ship->position, game_map.get(), 4);
+
+                    if (local_halite >= REQUIRED_HALITE_RADIUS) {
+						// Build a dropoff here
+                        command_queue.push_back(ship->make_dropoff());
+
+                        // IMPORTANT: On déduit virtuellement le coût tout de suite
+                        // "Virtually" deducting halite to avoid multiple ships deciding to build dropoffs on the same turn
+                        me->halite -= DROPOFF_COST;
+
+                        // Marking the cell as occupied (dropoff is a structure)
+                        next_turn_occupied[ship->position.y][ship->position.x] = true;
+
+						continue; // Skip the rest of the logic for this ship since it's now building a dropoff
+                    }
+                }
+            }
 
 			// Initialize ship state if ship is new
             if (ship_status.find(id) == ship_status.end()) {
@@ -331,7 +388,6 @@ int main(int argc, char* argv[]) {
             next_turn_occupied[yard_pos.y][yard_pos.x] = true;
         }
 
-        // TODO(step 7): Add dropoff creation logic (when/where to convert a ship)
         if (!game.end_turn(command_queue)) {
             break;
         }
