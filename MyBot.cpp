@@ -27,6 +27,55 @@ const int HALITE_RESERVE = 1000;     // Keep some halite after spawning for flex
 const int CONGESTION_RADIUS = 2;     // Manhattan distance around shipyard
 const int CONGESTION_LIMIT = 3;      // If too many ships are nearby, do not spawn
 
+// Mining targeting tuning (step 3 v2)
+const int SEARCH_RADIUS = 8;         // How far a ship looks for a good mining cell
+const int MIN_TARGET_HALITE = 120;   // Ignore very poor cells as targets
+const int STAY_MINE_THRESHOLD = 100; // Stay still if current cell has enough halite
+
+// Choose the best mining target around a ship
+Position pick_mining_target(const Position& ship_position, GameMap* game_map_ptr) {
+
+    Position best_position = ship_position;
+    double best_score = -1.0;
+
+    // Explore a square area around the ship
+    for (int offset_y = -SEARCH_RADIUS; offset_y <= SEARCH_RADIUS; ++offset_y) {
+        for (int offset_x = -SEARCH_RADIUS; offset_x <= SEARCH_RADIUS; ++offset_x) {
+
+            Position candidate_position(
+                ship_position.x + offset_x,
+                ship_position.y + offset_y
+            );
+
+            candidate_position = game_map_ptr->normalize(candidate_position);
+
+            int halite_on_cell =
+                game_map_ptr->at(candidate_position)->halite;
+
+            int distance_to_cell =
+                game_map_ptr->calculate_distance(ship_position, candidate_position);
+
+            // Base score = halite divided by distance
+            double score =
+                static_cast<double>(halite_on_cell) /
+                static_cast<double>(distance_to_cell + 1);
+
+            // Penalize poor cells instead of ignoring them
+            if (halite_on_cell < MIN_TARGET_HALITE) {
+                score *= 0.25;
+            }
+
+            if (score > best_score) {
+                best_score = score;
+                best_position = candidate_position;
+            }
+        }
+    }
+
+    return best_position;
+}
+
+
 int main(int argc, char* argv[]) {
     unsigned int rng_seed;
     if (argc > 1) {
@@ -41,6 +90,9 @@ int main(int argc, char* argv[]) {
 
 	// Map to memorize the state of each ship between turns (step 2)
     unordered_map<EntityId, ShipState> ship_status;
+    // Map to memorize a mining target for each ship between turns
+    unordered_map<EntityId, Position> ship_target;
+
 
     // Do any expensive pre-processing here; the per-turn 2s time limit starts after ready()
     game.ready("Colinatole");
@@ -64,6 +116,20 @@ int main(int argc, char* argv[]) {
             }
             else {
                 ++status;
+            }
+        }
+
+        // Cleanup: remove targets for ships that have been destroyed
+        for (auto target = ship_target.begin();
+            target != ship_target.end(); ) {
+
+            EntityId ship_id = target->first;
+
+            if (me->ships.find(ship_id) == me->ships.end()) {
+                target = ship_target.erase(target);
+            }
+            else {
+                ++target;
             }
         }
 
@@ -92,6 +158,11 @@ int main(int argc, char* argv[]) {
 			// Initialize ship state if ship is new
             if (ship_status.find(id) == ship_status.end()) {
                 ship_status[id] = ShipState::MINING;
+            }
+
+            // Initialize mining target if ship is new
+            if (ship_target.find(id) == ship_target.end()) {
+                ship_target[id] = ship->position;
             }
 
 			// Step 6 (done): Endgame recall: force returning when remaining turns are low
@@ -126,44 +197,67 @@ int main(int argc, char* argv[]) {
 				// Go back to shipyard
                 intended_direction = game_map->naive_navigate(ship, me->shipyard->position);
             }
-			else { // Step 3 (done): Replace random wandering with target selection (pick richer cells / local search)
-				// If current cell is rich enough, stay and mine
-                if (game_map->at(ship)->halite > constants::MAX_HALITE / 10) {
+			else { // Step 3 v2: target-based mining
+
+                int halite_here = game_map->at(ship)->halite;
+
+                // If current cell is rich enough, stay and mine
+                if (halite_here >= STAY_MINE_THRESHOLD) {
                     intended_direction = Direction::STILL;
                 }
                 else {
-					// Look around and pick the one with the most halite ('greedy' local search)
-                    int max_halite = -1;
-                    Direction best_dir = Direction::STILL;
 
-                    for (const auto& dir : ALL_CARDINALS) {
-                        Position target_pos = game_map->normalize(ship->position.directional_offset(dir));
+                    Position current_target = ship_target[id];
+                    int target_halite = game_map->at(current_target)->halite;
 
-                        // Skip cells already reserved for next turn (prevents internal conflitcs)
-                        if (next_turn_occupied[target_pos.y][target_pos.x]) {
+                    // If target reached or became poor, choose a new one
+                    if (ship->position == current_target || target_halite < MIN_TARGET_HALITE) {
+                        ship_target[id] = pick_mining_target(ship->position, game_map.get());
+                        current_target = ship_target[id];
+                    }
+
+                    // Move toward the target
+                    vector<Direction> possible_directions =
+                        game_map->get_unsafe_moves(ship->position, current_target);
+
+                    Direction chosen_direction = Direction::STILL;
+
+                    for (const auto& dir : possible_directions) {
+
+                        Position candidate =
+                            game_map->normalize(ship->position.directional_offset(dir));
+
+                        if (next_turn_occupied[candidate.y][candidate.x]) {
                             continue;
                         }
 
-                        // Skip cells currently occupied (basic collision avoidance)
-                        if (game_map->at(target_pos)->is_occupied()) {
+                        if (game_map->at(candidate)->is_occupied()) {
                             continue;
                         }
 
-                        int halite_at_target = game_map->at(target_pos)->halite;
-                        if (halite_at_target > max_halite) {
-                            max_halite = halite_at_target;
-                            best_dir = dir;
+                        chosen_direction = dir;
+                        break;
+                    }
+
+                    // If we cannot move toward the target, try any free cardinal move to avoid deadlocks
+                    if (chosen_direction == Direction::STILL) {
+                        for (const auto& dir : ALL_CARDINALS) {
+                            Position candidate = game_map->normalize(ship->position.directional_offset(dir));
+
+                            if (next_turn_occupied[candidate.y][candidate.x]) {
+                                continue;
+                            }
+
+                            if (game_map->at(candidate)->is_occupied()) {
+                                continue;
+                            }
+
+                            chosen_direction = dir;
+                            break;
                         }
                     }
 
-					// If we found a better cell, move there
-                    if (best_dir != Direction::STILL) {
-                        intended_direction = best_dir;
-                    }
-                    else {
-                        // Otherwise, fallback to random movement to avoid getting stuck
-                        intended_direction = ALL_CARDINALS[rng() % 4];
-                    }
+                    intended_direction = chosen_direction;
                 }
             }
 
