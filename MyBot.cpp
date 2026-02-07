@@ -52,6 +52,21 @@ int main(int argc, char* argv[]) {
         shared_ptr<Player> me = game.me;
         unique_ptr<GameMap>& game_map = game.game_map;
 
+        // Cleanup: remove entries for ships that have been destroyed
+        for (auto status = ship_status.begin();
+            status != ship_status.end(); ) {
+
+            EntityId ship_id = status->first;
+
+            // If the ship no longer exists in the current fleet, remove its state
+            if (me->ships.find(ship_id) == me->ships.end()) {
+                status = ship_status.erase(status);
+            }
+            else {
+                ++status;
+            }
+        }
+
         // Collision grid, empty grid initialized to false (indicating all cells are initially unoccupied)
         vector<vector<bool>> next_turn_occupied(game_map->height, vector<bool>(game_map->width, false));
 
