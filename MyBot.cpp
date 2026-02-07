@@ -20,6 +20,13 @@ enum class ShipState {
     RETURNING
 };
 
+// Spawn tuning for 64x64 4 player games (step 5)
+const int MAX_SHIPS = 24;            // Prevent over-fleeting and self-congestion
+const int STOP_SPAWN_TURNS = 140;    // Stop spawning when game is getting late
+const int HALITE_RESERVE = 1000;     // Keep some halite after spawning for flexibility
+const int CONGESTION_RADIUS = 2;     // Manhattan distance around shipyard
+const int CONGESTION_LIMIT = 3;      // If too many ships are nearby, do not spawn
+
 int main(int argc, char* argv[]) {
     unsigned int rng_seed;
     if (argc > 1) {
@@ -166,15 +173,32 @@ int main(int argc, char* argv[]) {
             // TODO(step 8): Consider enemy proximity (risk, inspiration)
         }
 
-        // TODO(step 5): Improve spawn logic (stop earlier, avoid congestion)
+        // Step 5 (done): Improve spawn logic (stop earlier, avoid congestion)
         Position yard_pos = me->shipyard->position;
-        if (
-            game.turn_number <= 200 &&
-            me->halite >= constants::SHIP_COST &&
-			!next_turn_occupied[yard_pos.y][yard_pos.x]) // Spawning only if the shipyard cell is not occupied for the next turn
-        {
+
+        int turns_remaining = constants::MAX_TURNS - game.turn_number;
+
+        // Count our ships close to shipyard to avoid congestion
+        int nearby_ships = 0;
+        for (const auto& ship_entry : me->ships) {
+            std::shared_ptr<Ship> ship = ship_entry.second;
+            int dist = game_map->calculate_distance(ship->position, yard_pos);
+            if (dist <= CONGESTION_RADIUS) {
+                nearby_ships++;
+            }
+        }
+
+        // Spawn based on conditions
+        bool can_spawn =
+            (turns_remaining > STOP_SPAWN_TURNS) &&
+            (me->ships.size() < static_cast<size_t>(MAX_SHIPS)) &&
+            (me->halite >= constants::SHIP_COST + HALITE_RESERVE) &&
+            (nearby_ships < CONGESTION_LIMIT) &&
+            (!next_turn_occupied[yard_pos.y][yard_pos.x]);
+
+        if (can_spawn) {
             command_queue.push_back(me->shipyard->spawn());
-			// Marking shipyard position as occupied for the next turn to prevent collisions with newly spawned ship
+            // Marking shipyard position as occupied for the next turn to prevent collisions with newly spawned ship
             next_turn_occupied[yard_pos.y][yard_pos.x] = true;
         }
 
