@@ -9,6 +9,12 @@
 using namespace std;
 using namespace hlt;
 
+Position get_nearest_deposit_position(
+    const shared_ptr<Player>& me,
+    GameMap* game_map,
+    const Position& from
+);
+
 void update_ship_state(
     const shared_ptr<Ship>& ship,
     const shared_ptr<Player>& me,

@@ -1,5 +1,35 @@
 #include "bot_navigation.hpp"
 
+// Returns the closest deposit structure from a given position
+Position get_nearest_deposit_position(
+    const shared_ptr<Player>& me,
+    GameMap* game_map,
+    const Position& from
+) {
+    // Start by assuming the shipyard is the closest deposit
+    Position best_pos = me->shipyard->position;
+
+    // Compute distnace from current position to shipyard
+    int best_dist = game_map->calculate_distance(from, best_pos);
+
+    // Iterate over all existing dropoffs
+    for (const auto& dropoff_entry : me->dropoffs) {
+        Position drop_pos = dropoff_entry.second->position;
+
+        // Compute distance from current position to this dropoff
+        int d = game_map->calculate_distance(from, drop_pos);
+
+        // If this dropoff is closer than the current best,
+        // update best distance and best position
+        if (d < best_dist) {
+            best_dist = d;
+            best_pos = drop_pos;
+        }
+    }
+
+    return best_pos;
+}
+
 void update_ship_state(
     const shared_ptr<Ship>& ship,
     const shared_ptr<Player>& me,
@@ -10,14 +40,16 @@ void update_ship_state(
     EntityId id = ship->id;
 
     // Step 6 (done): Endgame recall: force returning when remaining turns are low
-    int dist_to_yard = game_map->calculate_distance(ship->position, me->shipyard->position);
-    if (turns_remaining < dist_to_yard + 10) { // 10 is a safety margin
+    Position nearest_deposit_pos = get_nearest_deposit_position(me, game_map, ship->position);
+    int dist_to_deposit = game_map->calculate_distance(ship->position, nearest_deposit_pos);
+
+    if (turns_remaining < dist_to_deposit + 10) { // 10 is a safety margin
         mem.ship_status[id] = ShipState::RETURNING;
     }
 
     // Step 2 (done): Add persistent per-ship state machine (MINING/RETURNING)
     if (mem.ship_status[id] == ShipState::RETURNING) {
-        if (ship->position == me->shipyard->position) {
+        if (ship->position == nearest_deposit_pos) {
             // If we're on the shipyard, we go back to mining
             mem.ship_status[id] = ShipState::MINING;
         }
@@ -41,7 +73,8 @@ Direction decide_returning_direction(
 ) {
     // Moving logic based on state
     // Go back to shipyard
-    return game_map->naive_navigate(ship, me->shipyard->position);
+    Position nearest_deposit_pos = get_nearest_deposit_position(me, game_map, ship->position);
+    return game_map->naive_navigate(ship, nearest_deposit_pos);
 }
 
 Direction apply_move_cost_safety(
