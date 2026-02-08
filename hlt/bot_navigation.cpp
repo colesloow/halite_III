@@ -69,13 +69,44 @@ void update_ship_state(
 Direction decide_returning_direction(
     const shared_ptr<Ship>& ship,
     const shared_ptr<Player>& me,
-    GameMap* game_map
+    GameMap* game_map,
+    const vector<vector<bool>>& next_turn_occupied
 ) {
     // Moving logic based on state
-    // Go back to shipyard
     Position nearest_deposit_pos = get_nearest_deposit_position(me, game_map, ship->position);
+
+    // If we are on the deposit, move out to free it.
+    // Prefer the adjacent free cell with the lowest halite to avoid getting stuck at 0 cargo.
+    if (ship->position == nearest_deposit_pos) {
+        Position best_exit = nearest_deposit_pos;
+        int best_halite = 999999;
+        bool found = false;
+
+        for (const auto& dir : ALL_CARDINALS) {
+            Position p = game_map->normalize(nearest_deposit_pos.directional_offset(dir));
+
+            if (next_turn_occupied[p.y][p.x]) continue;
+            if (game_map->at(p)->is_occupied()) continue;
+
+            int h = game_map->at(p)->halite;
+            if (h < best_halite) {
+                best_halite = h;
+                best_exit = p;
+                found = true;
+            }
+        }
+
+        if (found) {
+            return game_map->naive_navigate(ship, best_exit);
+        }
+
+        return Direction::STILL;
+    }
+
+    // Otherwise, go back to nearest deposit
     return game_map->naive_navigate(ship, nearest_deposit_pos);
 }
+
 
 Direction apply_move_cost_safety(
     const shared_ptr<Ship>& ship,

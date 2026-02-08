@@ -61,7 +61,7 @@ vector<Command> BotController::play_turn(Game& game) {
 
         // Moving logic based on state
         if (mem_.ship_status[id] == ShipState::RETURNING) {
-            intended_direction = decide_returning_direction(ship, me, game_map.get());
+            intended_direction = decide_returning_direction(ship, me, game_map.get(), next_turn_occupied);
         }
         else {
             intended_direction = decide_mining_direction(ship, game_map.get(), mem_, next_turn_occupied);
