@@ -1,0 +1,37 @@
+#pragma once
+
+#include "game.hpp"
+#include "constants.hpp"
+#include "log.hpp"
+
+#include "bot_ship_memory.hpp"
+
+using namespace std;
+using namespace hlt;
+
+void update_ship_state(
+    const shared_ptr<Ship>& ship,
+    const shared_ptr<Player>& me,
+    GameMap* game_map,
+    int turns_remaining,
+    ShipMemory& mem
+);
+
+Direction decide_returning_direction(
+    const shared_ptr<Ship>& ship,
+    const shared_ptr<Player>& me,
+    GameMap* game_map
+);
+
+Direction apply_move_cost_safety(
+    const shared_ptr<Ship>& ship,
+    GameMap* game_map,
+    Direction intended_direction
+);
+
+Command finalize_and_reserve_move(
+    const shared_ptr<Ship>& ship,
+    GameMap* game_map,
+    Direction intended_direction,
+    vector<vector<bool>>& next_turn_occupied
+);

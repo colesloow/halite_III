@@ -142,6 +142,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\hlt\bot_controller.cpp" />
+    <ClCompile Include="..\hlt\bot_dropoff_planner.cpp" />
+    <ClCompile Include="..\hlt\bot_mining.cpp" />
+    <ClCompile Include="..\hlt\bot_navigation.cpp" />
+    <ClCompile Include="..\hlt\bot_ship_memory.cpp" />
+    <ClCompile Include="..\hlt\bot_spawn.cpp" />
     <ClCompile Include="..\hlt\command.cpp" />
     <ClCompile Include="..\hlt\constants.cpp" />
     <ClCompile Include="..\hlt\dropoff.cpp" />
@@ -153,6 +159,13 @@
     <ClCompile Include="..\MyBot.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\hlt\bot_config.hpp" />
+    <ClInclude Include="..\hlt\bot_controller.hpp" />
+    <ClInclude Include="..\hlt\bot_dropoff_planner.hpp" />
+    <ClInclude Include="..\hlt\bot_mining.hpp" />
+    <ClInclude Include="..\hlt\bot_navigation.hpp" />
+    <ClInclude Include="..\hlt\bot_ship_memory.hpp" />
+    <ClInclude Include="..\hlt\bot_spawn.hpp" />
     <ClInclude Include="..\hlt\command.hpp" />
     <ClInclude Include="..\hlt\constants.hpp" />
     <ClInclude Include="..\hlt\direction.hpp" />
