@@ -7,6 +7,7 @@
 #include "bot_ship_memory.hpp"
 
 #include <random>
+#include <vector>
 
 using namespace std;
 using namespace hlt;

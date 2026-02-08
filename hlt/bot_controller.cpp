@@ -1,3 +1,4 @@
+// bot_controller.cpp
 #include "bot_controller.hpp"
 
 #include "bot_dropoff_planner.hpp"
@@ -56,6 +57,24 @@ vector<Command> BotController::play_turn(Game& game) {
 
         update_ship_state(ship, me, game_map.get(), turns_remaining, mem_);
 
+        // Ensure the ship can afford to move from its current cell
+        {
+            int origin_halite = game_map->at(ship)->halite;
+            int ratio = constants::MOVE_COST_RATIO;
+
+            // Engine move cost is based on halite in the origin cell
+            int move_cost = (origin_halite + ratio - 1) / ratio;
+
+            // If we cannot afford to move, force STILL this turn.
+            // This keeps next_turn_occupied consistnet with what will actually happen in the engine
+            if (ship->halite < move_cost) {
+                command_queue.push_back(
+                    finalize_and_reserve_move(ship, game_map.get(), Direction::STILL, next_turn_occupied)
+                );
+                continue;
+            }
+        }
+
         // Targeting (step 4)
         Direction intended_direction = Direction::STILL;
 
@@ -69,7 +88,9 @@ vector<Command> BotController::play_turn(Game& game) {
 
         intended_direction = apply_move_cost_safety(ship, game_map.get(), intended_direction);
 
-        command_queue.push_back(finalize_and_reserve_move(ship, game_map.get(), intended_direction, next_turn_occupied));
+        command_queue.push_back(
+            finalize_and_reserve_move(ship, game_map.get(), intended_direction, next_turn_occupied)
+        );
         // TODO(step 8): Consider enemy proximity (risk, inspiration)
     }
 
