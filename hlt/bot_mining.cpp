@@ -1,7 +1,15 @@
 #include "bot_mining.hpp"
 
-Position pick_mining_target(const Position& ship_position, GameMap* game_map_ptr) {
+// Inspiration tuning (engine rules: >= 2 enemy ships within manhattan distance 4)
+static const int INSPIRATION_RADIUS = 4;
+static const int INSPIRATION_SHIPS_REQUIRED = 2;
+static const int INSPIRED_MULTIPLIER = 3;
 
+Position pick_mining_target(
+    const Position& ship_position,
+    GameMap* game_map_ptr,
+    const vector<vector<bool>>& inspired
+) {
     Position best_position = ship_position;
     double best_score = -1.0;
 
@@ -19,6 +27,11 @@ Position pick_mining_target(const Position& ship_position, GameMap* game_map_ptr
             int halite_on_cell =
                 game_map_ptr->at(candidate_position)->halite;
 
+            // Apply inspiration bonus (halite multiplier)
+            if (inspired[candidate_position.y][candidate_position.x]) {
+                halite_on_cell *= INSPIRED_MULTIPLIER;
+            }
+
             int distance_to_cell =
                 game_map_ptr->calculate_distance(ship_position, candidate_position);
 
@@ -28,7 +41,8 @@ Position pick_mining_target(const Position& ship_position, GameMap* game_map_ptr
                 static_cast<double>(distance_to_cell + 1);
 
             // Penalize poor cells instead of ignoring them
-            if (halite_on_cell < MIN_TARGET_HALITE) {
+            // NOTE: threshold still uses "raw" halite, this just reduces attraction to low-value areas.
+            if (game_map_ptr->at(candidate_position)->halite < MIN_TARGET_HALITE) {
                 score *= 0.25;
             }
 
@@ -46,21 +60,28 @@ Direction decide_mining_direction(
     const shared_ptr<Ship>& ship,
     GameMap* game_map,
     ShipMemory& mem,
-    const vector<vector<bool>>& next_turn_occupied
+    const vector<vector<bool>>& next_turn_occupied,
+    const vector<vector<bool>>& inspired
 ) {
     int halite_here = game_map->at(ship)->halite;
 
     // If current cell is rich enough, stay and mine
-    if (halite_here >= STAY_MINE_THRESHOLD) {
-        return Direction::STILL;
+    // Apply inspiration bonus as an "effective halite" heuristic
+    {
+        bool is_inspired_here = inspired[ship->position.y][ship->position.x];
+        int effective_halite_here = halite_here * (is_inspired_here ? INSPIRED_MULTIPLIER : 1);
+
+        if (effective_halite_here >= STAY_MINE_THRESHOLD) {
+            return Direction::STILL;
+        }
     }
 
     Position current_target = mem.ship_target[ship->id];
-    int target_halite = game_map->at(current_target)->halite;
+    int target_halite_raw = game_map->at(current_target)->halite;
 
     // If target reached or became poor, choose a new one
-    if (ship->position == current_target || target_halite < MIN_TARGET_HALITE) {
-        mem.ship_target[ship->id] = pick_mining_target(ship->position, game_map);
+    if (ship->position == current_target || target_halite_raw < MIN_TARGET_HALITE) {
+        mem.ship_target[ship->id] = pick_mining_target(ship->position, game_map, inspired);
         current_target = mem.ship_target[ship->id];
     }
 

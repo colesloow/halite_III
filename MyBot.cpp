@@ -22,7 +22,6 @@ int main(int argc, char* argv[]) {
 
     Game game;
 
-    // Do any expensive pre-processing here; the per-turn 2s time limit starts after ready()
     game.ready("Colinatole");
 
     BotController bot(rng);

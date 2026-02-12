@@ -1,4 +1,3 @@
-// bot_controller.cpp
 #include "bot_controller.hpp"
 
 #include "bot_dropoff_planner.hpp"
@@ -6,11 +5,13 @@
 #include "bot_navigation.hpp"
 #include "bot_spawn.hpp"
 
+#include <cstdint>
+
 #ifdef _DEBUG
 # define LOG(X) log::log(X);
 #else
 # define LOG(X)
-#endif // DEBUG
+#endif
 
 BotController::BotController(mt19937& rng)
     : rng_(rng) {
@@ -27,6 +28,26 @@ vector<Command> BotController::play_turn(Game& game) {
     // Collision grid, empty grid initialized to false (indicating all cells are initially unoccupied)
     vector<vector<bool>> next_turn_occupied(game_map->height, vector<bool>(game_map->width, false));
 
+    // Inspiration map (per turn): a cell is inspird if >= 2 enemy ships are within manhattan distance 4
+    static const int INSPIRATION_RADIUS = 4;
+    static const int INSPIRATION_SHIPS_REQUIRED = 2;
+
+    vector<vector<uint8_t>> enemy_count(game_map->height, vector<uint8_t>(game_map->width, 0));
+    vector<vector<bool>> inspired(game_map->height, vector<bool>(game_map->width, false));
+
+    auto add_enemy_influence = [&](const Position& epos) {
+        // Count enemies in a diamond (manhattan) radius around each enemy position.
+        for (int dy = -INSPIRATION_RADIUS; dy <= INSPIRATION_RADIUS; ++dy) {
+            int rem = INSPIRATION_RADIUS - std::abs(dy);
+            for (int dx = -rem; dx <= rem; ++dx) {
+                Position p(epos.x + dx, epos.y + dy);
+                p = game_map->normalize(p);
+                uint8_t& c = enemy_count[p.y][p.x];
+                if (c < 255) ++c;
+            }
+        }
+        };
+
     vector<Command> command_queue;
 
     // Marking enemy ship positions as occupied to avoid crashing into them
@@ -39,6 +60,15 @@ vector<Command> BotController::play_turn(Game& game) {
             // UPGRADE: Marking adjacent cells as well to account for their possible moves
             Position pos = ship_pair.second->position;
             next_turn_occupied[pos.y][pos.x] = true;
+
+            // Inspiration counting (uses current enemy positions)
+            add_enemy_influence(pos);
+        }
+    }
+
+    for (int y = 0; y < game_map->height; ++y) {
+        for (int x = 0; x < game_map->width; ++x) {
+            inspired[y][x] = (enemy_count[y][x] >= INSPIRATION_SHIPS_REQUIRED);
         }
     }
 
@@ -83,7 +113,7 @@ vector<Command> BotController::play_turn(Game& game) {
             intended_direction = decide_returning_direction(ship, me, game_map.get(), next_turn_occupied);
         }
         else {
-            intended_direction = decide_mining_direction(ship, game_map.get(), mem_, next_turn_occupied);
+            intended_direction = decide_mining_direction(ship, game_map.get(), mem_, next_turn_occupied, inspired);
         }
 
         intended_direction = apply_move_cost_safety(ship, game_map.get(), intended_direction);

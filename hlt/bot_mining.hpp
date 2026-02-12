@@ -9,11 +9,16 @@
 using namespace std;
 using namespace hlt;
 
-Position pick_mining_target(const Position& ship_position, GameMap* game_map_ptr);
+Position pick_mining_target(
+    const Position& ship_position,
+    GameMap* game_map_ptr,
+    const vector<vector<bool>>& inspired
+);
 
 Direction decide_mining_direction(
     const shared_ptr<Ship>& ship,
     GameMap* game_map,
     ShipMemory& mem,
-    const vector<vector<bool>>& next_turn_occupied
+    const vector<vector<bool>>& next_turn_occupied,
+    const vector<vector<bool>>& inspired
 );
