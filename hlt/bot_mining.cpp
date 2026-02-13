@@ -1,4 +1,5 @@
 #include "bot_mining.hpp"
+#include "bot_navigation.hpp"
 
 Position pick_mining_target(
     const Position& ship_position,
@@ -80,42 +81,5 @@ Direction decide_mining_direction(
         current_target = mem.ship_target[ship->id];
     }
 
-    vector<Direction> possible_directions =
-        game_map->get_unsafe_moves(ship->position, current_target);
-
-    Direction chosen_direction = Direction::STILL;
-
-    for (const auto& dir : possible_directions) {
-
-        Position candidate =
-            game_map->normalize(ship->position.directional_offset(dir));
-
-        if (next_turn_occupied[candidate.y][candidate.x]) continue;
-        if (game_map->at(candidate)->is_occupied()) continue;
-
-        chosen_direction = dir;
-        break;
-    }
-
-    if (chosen_direction == Direction::STILL) {
-        Direction best_dir = Direction::STILL;
-        int min_dist = 9999;
-
-        for (const auto& dir : ALL_CARDINALS) {
-            Position candidate = game_map->normalize(ship->position.directional_offset(dir));
-
-            if (next_turn_occupied[candidate.y][candidate.x]) continue;
-            if (game_map->at(candidate)->is_occupied()) continue;
-
-            int dist = game_map->calculate_distance(candidate, current_target);
-            if (dist < min_dist) {
-                min_dist = dist;
-                best_dir = dir;
-            }
-        }
-
-        chosen_direction = best_dir;
-    }
-
-    return chosen_direction;
+    return smart_navigate(ship, game_map, current_target, next_turn_occupied);
 }
