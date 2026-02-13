@@ -107,10 +107,11 @@ vector<Command> BotController::play_turn(Game& game) {
 
         // Targeting (step 4)
         Direction intended_direction = Direction::STILL;
+        bool is_ship_inspired = inspired[ship->position.y][ship->position.x]; // Get inspiration status
 
         // Moving logic based on state
         if (mem_.ship_status[id] == ShipState::RETURNING) {
-            intended_direction = decide_returning_direction(ship, me, game_map.get(), next_turn_occupied);
+            intended_direction = decide_returning_direction(ship, me, game_map.get(), next_turn_occupied, is_ship_inspired);
         }
         else {
             intended_direction = decide_mining_direction(ship, game_map.get(), mem_, next_turn_occupied, inspired);
