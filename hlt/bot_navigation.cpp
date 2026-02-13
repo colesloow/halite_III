@@ -14,15 +14,13 @@ Direction smart_navigate(
     if (ship->position == target) return Direction::STILL;
 
     // Try ideal directions first
+    // UPGRADE?: move pre-pass here if possible
     for (const auto& dir : unsafe_moves) {
         Position candidate = game_map->normalize(ship->position.directional_offset(dir));
 
-        // Check if the cell be free next turn
+		// Cell is either free or occupied by an allied ship that will move, so it's safe to move there due to pre-pass marking.
         if (!next_turn_occupied[candidate.y][candidate.x]) {
-            // Check if there is an enemy structure
-            if (!game_map->at(candidate)->is_occupied() || game_map->at(candidate)->ship->owner == ship->owner) {
-                return dir;
-            }
+            return dir;
         }
     }
 
