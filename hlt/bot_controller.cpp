@@ -72,6 +72,37 @@ vector<Command> BotController::play_turn(Game& game) {
         }
     }
 
+    // Collision prevention: pre-pass for still ships (marking allied ships that will necessarily stay still in advance)
+    for (const auto& ship_iterator : me->ships) {
+        shared_ptr<Ship> ship = ship_iterator.second;
+
+        int origin_halite = game_map->at(ship)->halite;
+        int move_cost = (origin_halite + constants::MOVE_COST_RATIO - 1) / constants::MOVE_COST_RATIO;
+
+        bool will_stay_still = false;
+
+        // Reason 1 : Not enough fuel to move
+        if (ship->halite < move_cost) {
+            will_stay_still = true;
+        }
+        // Reason 2 : Very profitable mining
+        else {
+            mem_.ensure_initialized(ship);
+            if (mem_.ship_status[ship->id] == ShipState::MINING) {
+                bool is_ship_inspired = inspired[ship->position.y][ship->position.x];
+                int effective_halite = origin_halite * (is_ship_inspired ? INSPIRED_MULTIPLIER : 1);
+
+                if (effective_halite >= STAY_MINE_THRESHOLD) {
+                    will_stay_still = true;
+                }
+            }
+        }
+
+        if (will_stay_still) {
+            next_turn_occupied[ship->position.y][ship->position.x] = true;
+        }
+    }
+
     for (const auto& ship_iterator : me->ships) {
         shared_ptr<Ship> ship = ship_iterator.second;
         EntityId id = ship->id;
