@@ -9,6 +9,13 @@
 using namespace std;
 using namespace hlt;
 
+Direction smart_navigate(
+    const shared_ptr<Ship>& ship,
+    GameMap* game_map,
+    const Position& target,
+    const vector<vector<bool>>& next_turn_occupied
+);
+
 Position get_nearest_deposit_position(
     const shared_ptr<Player>& me,
     GameMap* game_map,

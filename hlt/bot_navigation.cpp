@@ -1,5 +1,59 @@
 #include "bot_navigation.hpp"
 
+Direction smart_navigate(
+    const shared_ptr<Ship>& ship,
+    GameMap* game_map,
+    const Position& target,
+    const vector<vector<bool>>& next_turn_occupied
+) {
+    // Obtain the "ideal" directions (the shortest one towards the target)
+    // get_unsafe_moves gives 1 or 2 directions (e.g. North and East)
+    vector<Direction> unsafe_moves = game_map->get_unsafe_moves(ship->position, target);
+
+    // already on the target
+    if (ship->position == target) return Direction::STILL;
+
+    // Try ideal directions first
+    for (const auto& dir : unsafe_moves) {
+        Position candidate = game_map->normalize(ship->position.directional_offset(dir));
+
+        // Check if the cell be free next turn
+        if (!next_turn_occupied[candidate.y][candidate.x]) {
+            // Check if there is an enemy structure
+            if (!game_map->at(candidate)->is_occupied() || game_map->at(candidate)->ship->owner == ship->owner) {
+                return dir;
+            }
+        }
+    }
+
+    // If ideal directions are blocked, look for an alternativ
+    // search for an adjacent free cell that doesn't take us too far away
+    Direction best_alternative = Direction::STILL;
+    int shortest_dist = game_map->calculate_distance(ship->position, target); // Current distance
+    int best_dist = 9999;
+
+    for (const auto& dir : ALL_CARDINALS) {
+        Position candidate = game_map->normalize(ship->position.directional_offset(dir));
+
+        // skip if already taken
+        if (next_turn_occupied[candidate.y][candidate.x]) continue;
+
+        // compute distance via this alternative cell
+        int dist = game_map->calculate_distance(candidate, target);
+
+        // Accept moving slightly away if it's the only option to move
+        // UPGRADE: adapt to change with `dist < shortest_dist` but needs testing
+        if (dist < best_dist) {
+            best_dist = dist;
+            best_alternative = dir;
+        }
+    }
+
+    // Return found alternative 
+    // even if it doesn't bring us closer, it may unblock the situation
+    return best_alternative;
+}
+
 // Returns the closest deposit structure from a given position
 Position get_nearest_deposit_position(
     const shared_ptr<Player>& me,
