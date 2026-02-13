@@ -34,7 +34,8 @@ Direction decide_returning_direction(
     const shared_ptr<Ship>& ship,
     const shared_ptr<Player>& me,
     GameMap* game_map,
-    const vector<vector<bool>>& next_turn_occupied
+    const vector<vector<bool>>& next_turn_occupied,
+    bool is_inspired
 );
 
 Direction apply_move_cost_safety(
