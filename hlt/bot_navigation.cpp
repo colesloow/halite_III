@@ -18,16 +18,17 @@ Direction smart_navigate(
     for (const auto& dir : unsafe_moves) {
         Position candidate = game_map->normalize(ship->position.directional_offset(dir));
 
-		// Cell is either free or occupied by an allied ship that will move, so it's safe to move there due to pre-pass marking.
+		// Cell is either free or occupied by an allied ship that will move
+        // = safe to move there due to pre-pass marking
         if (!next_turn_occupied[candidate.y][candidate.x]) {
             return dir;
         }
     }
 
-    // If ideal directions are blocked, look for an alternativ
+    // If ideal directions are blocked, look for an alternative
     // search for an adjacent free cell that doesn't take us too far away
     Direction best_alternative = Direction::STILL;
-    int shortest_dist = game_map->calculate_distance(ship->position, target); // Current distance
+    int shortest_dist = game_map->calculate_distance(ship->position, target);
     int best_dist = 9999;
 
     for (const auto& dir : ALL_CARDINALS) {
