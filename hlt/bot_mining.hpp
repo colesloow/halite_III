@@ -9,6 +9,11 @@
 using namespace std;
 using namespace hlt;
 
+// Inspiration tuning (engine rules: >= 2 enemy ships within manhattan distance 4)
+static const int INSPIRATION_RADIUS = 4;
+static const int INSPIRATION_SHIPS_REQUIRED = 2;
+static const int INSPIRED_MULTIPLIER = 3;
+
 Position pick_mining_target(
     const Position& ship_position,
     GameMap* game_map_ptr,
