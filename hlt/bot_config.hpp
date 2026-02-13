@@ -22,5 +22,5 @@ const int STAY_MINE_THRESHOLD = 100; // Stay still if current cell has enough ha
 // Dropoff tuning (step 7)
 const int DROPOFF_COST = 4000;
 const int MIN_DIST_DROPOFF = 15;     // Mini distance between two dropoffs
-const double REQUIRED_HALITE_RADIUS = 7000.0; // Total halite required in the area around the dropoff (5x5)
+const double REQUIRED_HALITE_RADIUS = 12000.0; // Total halite required in the area around the dropoff
 const int MAX_DROPOFFS = 3;          // Arbitrary limit on number of dropoffs to prevent over-expansion

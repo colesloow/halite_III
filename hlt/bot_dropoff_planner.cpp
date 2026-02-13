@@ -12,6 +12,17 @@ int count_halite_in_area(const Position& center, GameMap* game_map, int radius) 
     return total_halite;
 }
 
+// Compute total number of allied ships around a position
+int count_allied_ships_in_area(const Position& center, const shared_ptr<Player>& me, GameMap* game_map, int radius) {
+    int count = 0;
+    for (const auto& ship_pair : me->ships) {
+        if (game_map->calculate_distance(center, ship_pair.second->position) <= radius) {
+            count++;
+        }
+    }
+    return count;
+}
+
 bool try_build_dropoff(
     const shared_ptr<Ship>& ship,
     const shared_ptr<Player>& me,
@@ -20,6 +31,9 @@ bool try_build_dropoff(
     vector<Command>& command_queue,
     vector<vector<bool>>& next_turn_occupied
 ) {
+	// Dynamic timing: The larger the map, the more time we need to make it worth building a dropoff
+    int min_turns_for_roi = game_map->width * 2 + 20;
+
     // Dropoff construction logic (step 7)
     // Construction is considered only if we have the budget and enough time left
     // Keeping a security margin (SHIP_COST) to be able to spawn after if needed
@@ -45,18 +59,36 @@ bool try_build_dropoff(
             // Check 3 : Halite in the area (radius of 4)
             int local_halite = count_halite_in_area(ship->position, game_map, 4);
 
+            // Requiring a minimum number of allied ships in the area to ensure the dropoff will be used
+            int local_ships = count_allied_ships_in_area(ship->position, me, game_map, 5);
+
             if (local_halite >= REQUIRED_HALITE_RADIUS) {
-                // Build a dropoff here
-                command_queue.push_back(ship->make_dropoff());
+				// Check if we're in the "center" of the rich area by comparing with adjacent cells
+                bool is_local_maximum = true;
+                for (const auto& dir : ALL_CARDINALS) {
+                    Position adj = game_map->normalize(ship->position.directional_offset(dir));
+                    int adj_halite = count_halite_in_area(adj, game_map, 4);
 
-                // IMPORTANT: Virtually deduct the cost right away
-                // "Virtually" deducting halite to avoid multiple ships deciding to build dropoffs on the same turn
-                me->halite -= DROPOFF_COST;
+					// If an adjacent cell has significantly more halite (e.g. +500), we're not on the best spot
+                    if (adj_halite > local_halite + 500) {
+                        is_local_maximum = false;
+                        break;
+                    }
+                }
 
-                // Marking the cell as occupied (dropoff is a structure)
-                next_turn_occupied[ship->position.y][ship->position.x] = true;
+                // If we're on the best local spot, we build a dropoff
+                if (!is_local_maximum) {
+                    // Build a dropoff here
+                    command_queue.push_back(ship->make_dropoff());
 
-                return true; // Skip the rest of the logic for this ship since it's now building a dropoff
+                    // /!\ "Virtually" deducting halite to avoid multiple ships deciding to build dropoffs on the same turn
+                    me->halite -= DROPOFF_COST;
+
+                    // Marking the cell as occupied (dropoff is a structure)
+                    next_turn_occupied[ship->position.y][ship->position.x] = true;
+
+                    return true; // Skip the rest of the logic for this ship since it's now building a dropoff
+                }
             }
         }
     }
