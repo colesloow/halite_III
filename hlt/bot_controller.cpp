@@ -28,10 +28,6 @@ vector<Command> BotController::play_turn(Game& game) {
     // Collision grid, empty grid initialized to false (indicating all cells are initially unoccupied)
     vector<vector<bool>> next_turn_occupied(game_map->height, vector<bool>(game_map->width, false));
 
-    // Inspiration map (per turn): a cell is inspird if >= 2 enemy ships are within manhattan distance 4
-    static const int INSPIRATION_RADIUS = 4;
-    static const int INSPIRATION_SHIPS_REQUIRED = 2;
-
     vector<vector<uint8_t>> enemy_count(game_map->height, vector<uint8_t>(game_map->width, 0));
     vector<vector<bool>> inspired(game_map->height, vector<bool>(game_map->width, false));
 
