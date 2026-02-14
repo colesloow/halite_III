@@ -31,6 +31,9 @@ vector<Command> BotController::play_turn(Game& game) {
     vector<vector<uint8_t>> enemy_count(game_map->height, vector<uint8_t>(game_map->width, 0));
     vector<vector<bool>> inspired(game_map->height, vector<bool>(game_map->width, false));
 
+	// Danger map (enemy position + 4 adjacent cells)
+    vector<vector<bool>> danger_map(game_map->height, vector<bool>(game_map->width, false));
+
     auto add_enemy_influence = [&](const Position& epos) {
         // Count enemies in a diamond (manhattan) radius around each enemy position.
         for (int dy = -INSPIRATION_RADIUS; dy <= INSPIRATION_RADIUS; ++dy) {
@@ -51,11 +54,21 @@ vector<Command> BotController::play_turn(Game& game) {
     // UPGRADE: can change for more aggressive play later
     for (const auto& player_ptr : game.players) {
         if (player_ptr->id == me->id) continue; // Ignoring our own ships for now
+
         for (const auto& ship_pair : player_ptr->ships) {
             // Marking enemy ship's current position as dangerous (simplification, since they can move)
             // UPGRADE: Marking adjacent cells as well to account for their possible moves
             Position pos = ship_pair.second->position;
+
+            // Enemy cell is dangerous and occupied
             next_turn_occupied[pos.y][pos.x] = true;
+            danger_map[pos.y][pos.x] = true;
+
+			// The 4 adjacent cells are also dangerous (potentially occupied next turn)
+            for (const auto& dir : ALL_CARDINALS) {
+                Position adj = game_map->normalize(pos.directional_offset(dir));
+                danger_map[adj.y][adj.x] = true;
+            }
 
             // Inspiration counting (uses current enemy positions)
             add_enemy_influence(pos);
@@ -138,10 +151,14 @@ vector<Command> BotController::play_turn(Game& game) {
 
         // Moving logic based on state
         if (mem_.ship_status[id] == ShipState::RETURNING) {
-            intended_direction = decide_returning_direction(ship, me, game_map.get(), next_turn_occupied, is_ship_inspired);
+            intended_direction = decide_returning_direction(
+                ship, me, game_map.get(), next_turn_occupied, danger_map, is_ship_inspired
+            );
         }
         else {
-            intended_direction = decide_mining_direction(ship, game_map.get(), mem_, next_turn_occupied, inspired);
+            intended_direction = decide_mining_direction(
+                ship, game_map.get(), mem_, next_turn_occupied, danger_map, inspired
+            );
         }
 
         intended_direction = apply_move_cost_safety(ship, game_map.get(), intended_direction);

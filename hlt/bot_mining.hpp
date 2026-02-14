@@ -25,5 +25,6 @@ Direction decide_mining_direction(
     GameMap* game_map,
     ShipMemory& mem,
     const vector<vector<bool>>& next_turn_occupied,
+    const vector<vector<bool>>& danger_map,
     const vector<vector<bool>>& inspired
 );

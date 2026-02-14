@@ -4,23 +4,28 @@ Direction smart_navigate(
     const shared_ptr<Ship>& ship,
     GameMap* game_map,
     const Position& target,
-    const vector<vector<bool>>& next_turn_occupied
+    const vector<vector<bool>>& next_turn_occupied,
+    const vector<vector<bool>>& danger_map
 ) {
+    // already on the target
+    if (ship->position == target) return Direction::STILL;
+
     // Obtain the "ideal" directions (the shortest one towards the target)
     // get_unsafe_moves gives 1 or 2 directions (e.g. North and East)
     vector<Direction> unsafe_moves = game_map->get_unsafe_moves(ship->position, target);
 
-    // already on the target
-    if (ship->position == target) return Direction::STILL;
 
     // Try ideal directions first
     // UPGRADE?: move pre-pass here if possible
     for (const auto& dir : unsafe_moves) {
         Position candidate = game_map->normalize(ship->position.directional_offset(dir));
 
+		// Exception: if the targeted cell is our target dropoff, we go there even if it's dangerous
+        bool is_danger = danger_map[candidate.y][candidate.x] && (candidate != target);
+
 		// Cell is either free or occupied by an allied ship that will move
         // = safe to move there due to pre-pass marking
-        if (!next_turn_occupied[candidate.y][candidate.x]) {
+        if (!next_turn_occupied[candidate.y][candidate.x] && !is_danger) {
             return dir;
         }
     }
@@ -33,24 +38,56 @@ Direction smart_navigate(
 
     for (const auto& dir : ALL_CARDINALS) {
         Position candidate = game_map->normalize(ship->position.directional_offset(dir));
+        bool is_danger = danger_map[candidate.y][candidate.x] && (candidate != target);
 
         // skip if already taken
-        if (next_turn_occupied[candidate.y][candidate.x]) continue;
+        if (!next_turn_occupied[candidate.y][candidate.x] && !is_danger)
+        {
+            // compute distance via this alternative cell
+            int dist = game_map->calculate_distance(candidate, target);
 
-        // compute distance via this alternative cell
-        int dist = game_map->calculate_distance(candidate, target);
-
-        // Accept moving slightly away if it's the only option to move
-        // UPGRADE: adapt to change with `dist < shortest_dist` but needs testing
-        if (dist < best_dist) {
-            best_dist = dist;
-            best_alternative = dir;
+            // Accept moving slightly away if it's the only option to move
+            // UPGRADE: adapt to change with `dist < shortest_dist` but needs testing
+            if (dist < best_dist) {
+                best_dist = dist;
+                best_alternative = dir;
+            }
         }
     }
 
-    // Return found alternative 
-    // even if it doesn't bring us closer, it may unblock the situation
-    return best_alternative;
+    if (best_alternative != Direction::STILL) {
+        return best_alternative;
+    }
+
+    // Danger map logic
+    // are we currently safe?
+    bool is_here_safe = !danger_map[ship->position.y][ship->position.x];
+
+    if (is_here_safe) {
+        // Better to wait than to take a risky move
+        return Direction::STILL;
+    }
+
+	// If we're already in danger, we need to run towards the target ignoring the danger map (but still avoiding occupied allies' cells)
+    for (const auto& dir : unsafe_moves) {
+        Position candidate = game_map->normalize(ship->position.directional_offset(dir));
+        if (!next_turn_occupied[candidate.y][candidate.x]) return dir;
+    }
+
+    int best_panic_dist = 9999;
+    Direction best_panic_dir = Direction::STILL;
+    for (const auto& dir : ALL_CARDINALS) {
+        Position candidate = game_map->normalize(ship->position.directional_offset(dir));
+        if (!next_turn_occupied[candidate.y][candidate.x]) {
+            int dist = game_map->calculate_distance(candidate, target);
+            if (dist < best_panic_dist) {
+                best_panic_dist = dist;
+                best_panic_dir = dir;
+            }
+        }
+    }
+
+    return best_panic_dir;
 }
 
 // Returns the closest deposit structure from a given position
@@ -124,6 +161,7 @@ Direction decide_returning_direction(
     const shared_ptr<Player>& me,
     GameMap* game_map,
     const vector<vector<bool>>& next_turn_occupied,
+    const vector<vector<bool>>& danger_map,
     bool is_inspired
 ) {
     // Moving logic based on state
@@ -150,12 +188,12 @@ Direction decide_returning_direction(
         }
         if (found) {
             // Using smart_navigate towards the best exit
-            return smart_navigate(ship, game_map, best_exit, next_turn_occupied);
+            return smart_navigate(ship, game_map, best_exit, next_turn_occupied, danger_map);
         }
         return Direction::STILL;
     }
 
-    return smart_navigate(ship, game_map, nearest_deposit_pos, next_turn_occupied);
+    return smart_navigate(ship, game_map, nearest_deposit_pos, next_turn_occupied, danger_map);
 }
 
 

@@ -13,7 +13,8 @@ Direction smart_navigate(
     const shared_ptr<Ship>& ship,
     GameMap* game_map,
     const Position& target,
-    const vector<vector<bool>>& next_turn_occupied
+    const vector<vector<bool>>& next_turn_occupied,
+    const vector<vector<bool>>& danger_map
 );
 
 Position get_nearest_deposit_position(
@@ -35,6 +36,7 @@ Direction decide_returning_direction(
     const shared_ptr<Player>& me,
     GameMap* game_map,
     const vector<vector<bool>>& next_turn_occupied,
+    const vector<vector<bool>>& danger_map,
     bool is_inspired
 );
 

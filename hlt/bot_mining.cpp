@@ -57,6 +57,7 @@ Direction decide_mining_direction(
     GameMap* game_map,
     ShipMemory& mem,
     const vector<vector<bool>>& next_turn_occupied,
+    const vector<vector<bool>>& danger_map,
     const vector<vector<bool>>& inspired
 ) {
     int halite_here = game_map->at(ship)->halite;
@@ -81,5 +82,5 @@ Direction decide_mining_direction(
         current_target = mem.ship_target[ship->id];
     }
 
-    return smart_navigate(ship, game_map, current_target, next_turn_occupied);
+    return smart_navigate(ship, game_map, current_target, next_turn_occupied, danger_map);
 }
