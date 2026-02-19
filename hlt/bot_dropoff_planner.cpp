@@ -38,7 +38,7 @@ bool try_build_dropoff(
     // Construction is considered only if we have the budget and enough time left
     // Keeping a security margin (SHIP_COST) to be able to spawn after if needed
     if (me->halite >= DROPOFF_COST + constants::SHIP_COST &&
-        turns_remaining > 100 &&
+        turns_remaining > min_turns_for_roi &&
         me->dropoffs.size() < MAX_DROPOFFS)
     {
         // Check 1 : Distance with the shipyard
@@ -62,7 +62,7 @@ bool try_build_dropoff(
             // Requiring a minimum number of allied ships in the area to ensure the dropoff will be used
             int local_ships = count_allied_ships_in_area(ship->position, me, game_map, 5);
 
-            if (local_halite >= REQUIRED_HALITE_RADIUS) {
+            if (local_halite >= REQUIRED_HALITE_RADIUS && local_ships >= MIN_SHIPS_RADIUS) {
 				// Check if we're in the "center" of the rich area by comparing with adjacent cells
                 bool is_local_maximum = true;
                 for (const auto& dir : ALL_CARDINALS) {
@@ -77,7 +77,7 @@ bool try_build_dropoff(
                 }
 
                 // If we're on the best local spot, we build a dropoff
-                if (!is_local_maximum) {
+                if (is_local_maximum) {
                     // Build a dropoff here
                     command_queue.push_back(ship->make_dropoff());
 

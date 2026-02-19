@@ -24,3 +24,4 @@ const int DROPOFF_COST = 4000;
 const int MIN_DIST_DROPOFF = 15;     // Mini distance between two dropoffs
 const double REQUIRED_HALITE_RADIUS = 12000.0; // Total halite required in the area around the dropoff
 const int MAX_DROPOFFS = 3;          // Arbitrary limit on number of dropoffs to prevent over-expansion
+const int MIN_SHIPS_RADIUS = 3;           // Minimum number of allied ships required in the area around the dropoff to consider building it
