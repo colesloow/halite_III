@@ -4,7 +4,8 @@
 Position pick_mining_target(
     const Position& ship_position,
     GameMap* game_map_ptr,
-    const vector<vector<bool>>& inspired
+    const vector<vector<bool>>& inspired,
+    vector<vector<bool>>& claimed_targets
 ) {
     Position best_position = ship_position;
     double best_score = -1.0;
@@ -42,13 +43,19 @@ Position pick_mining_target(
                 score *= 0.25;
             }
 
+			// Anti-clumping: if an ally is already targeting this cell, reduce its attractiveness
+            if (claimed_targets[candidate_position.y][candidate_position.x]) {
+                score *= 0.01;
+            }
+
             if (score > best_score) {
                 best_score = score;
                 best_position = candidate_position;
             }
         }
     }
-
+	// Reserve the chosen target
+    claimed_targets[best_position.y][best_position.x] = true;
     return best_position;
 }
 
@@ -58,7 +65,8 @@ Direction decide_mining_direction(
     ShipMemory& mem,
     const vector<vector<bool>>& next_turn_occupied,
     const vector<vector<bool>>& danger_map,
-    const vector<vector<bool>>& inspired
+    const vector<vector<bool>>& inspired,
+    vector<vector<bool>>& claimed_targets
 ) {
     int halite_here = game_map->at(ship)->halite;
 
@@ -78,7 +86,7 @@ Direction decide_mining_direction(
 
     // If target reached or became poor, choose a new one
     if (ship->position == current_target || target_halite_raw < MIN_TARGET_HALITE) {
-        mem.ship_target[ship->id] = pick_mining_target(ship->position, game_map, inspired);
+        mem.ship_target[ship->id] = pick_mining_target(ship->position, game_map, inspired, claimed_targets);
         current_target = mem.ship_target[ship->id];
     }
 

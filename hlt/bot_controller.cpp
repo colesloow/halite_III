@@ -89,6 +89,23 @@ vector<Command> BotController::play_turn(Game& game) {
         next_turn_occupied[pos.y][pos.x] = true;
     }
 
+    // Anti-clumping grid
+    vector<vector<bool>> claimed_targets(game_map->height, vector<bool>(game_map->width, false));
+
+	// Pre-filling with targets of ships that are already in MINING mode
+    for (const auto& ship_iterator : me->ships) {
+        shared_ptr<Ship> ship = ship_iterator.second;
+        mem_.ensure_initialized(ship);
+
+        if (mem_.ship_status[ship->id] == ShipState::MINING) {
+            Position target = mem_.ship_target[ship->id];
+			// If the ship is not already on its target, it reserves it
+            if (ship->position != target) {
+                claimed_targets[target.y][target.x] = true;
+            }
+        }
+    }
+
 	// main ship loop
     for (const auto& ship_iterator : me->ships) {
         shared_ptr<Ship> ship = ship_iterator.second;
@@ -139,7 +156,7 @@ vector<Command> BotController::play_turn(Game& game) {
         }
         else {
             intended_direction = decide_mining_direction(
-                ship, game_map.get(), mem_, next_turn_occupied, danger_map, inspired
+                ship, game_map.get(), mem_, next_turn_occupied, danger_map, inspired, claimed_targets
             );
         }
 
@@ -151,7 +168,7 @@ vector<Command> BotController::play_turn(Game& game) {
         // TODO(step 8): Consider enemy proximity (risk, inspiration)
     }
 
-    try_spawn(me, game_map.get(), turns_remaining, next_turn_occupied, command_queue);
+    try_spawn(me, game_map.get(), turns_remaining, next_turn_occupied, command_queue, dynamic_max_ships);
 
     return command_queue;
 }

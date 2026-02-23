@@ -17,7 +17,8 @@ static const int INSPIRED_MULTIPLIER = 3;
 Position pick_mining_target(
     const Position& ship_position,
     GameMap* game_map_ptr,
-    const vector<vector<bool>>& inspired
+    const vector<vector<bool>>& inspired,
+    vector<vector<bool>>& claimed_targets
 );
 
 Direction decide_mining_direction(
@@ -26,5 +27,6 @@ Direction decide_mining_direction(
     ShipMemory& mem,
     const vector<vector<bool>>& next_turn_occupied,
     const vector<vector<bool>>& danger_map,
-    const vector<vector<bool>>& inspired
+    const vector<vector<bool>>& inspired,
+    vector<vector<bool>>& claimed_targets
 );
