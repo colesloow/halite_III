@@ -5,7 +5,8 @@ void try_spawn(
     GameMap* game_map,
     int turns_remaining,
     vector<vector<bool>>& next_turn_occupied,
-    vector<Command>& command_queue
+    vector<Command>& command_queue,
+    int max_ships
 ) {
     // Step 5 (done): Improve spawn logic (stop earlier, avoid congestion)
     Position yard_pos = me->shipyard->position;
@@ -23,7 +24,7 @@ void try_spawn(
     // Spawn based on conditions
     bool can_spawn =
         (turns_remaining > STOP_SPAWN_TURNS) &&
-        (me->ships.size() < static_cast<size_t>(MAX_SHIPS)) &&
+        (me->ships.size() < static_cast<size_t>(max_ships)) &&
         (me->halite >= constants::SHIP_COST + HALITE_RESERVE) &&
         (nearby_ships < CONGESTION_LIMIT) &&
         (!next_turn_occupied[yard_pos.y][yard_pos.x]);

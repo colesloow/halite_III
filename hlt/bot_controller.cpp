@@ -25,6 +25,8 @@ vector<Command> BotController::play_turn(Game& game) {
 
     mem_.cleanup_dead_ships(me);
 
+    int dynamic_max_ships = (game_map->width * game_map->height) / 18; // ~1 ship for 18 cells
+
     // Collision grid, empty grid initialized to false (indicating all cells are initially unoccupied)
     vector<vector<bool>> next_turn_occupied(game_map->height, vector<bool>(game_map->width, false));
 

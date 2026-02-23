@@ -14,5 +14,6 @@ void try_spawn(
     GameMap* game_map,
     int turns_remaining,
     vector<vector<bool>>& next_turn_occupied,
-    vector<Command>& command_queue
+    vector<Command>& command_queue,
+    int max_ships
 );
