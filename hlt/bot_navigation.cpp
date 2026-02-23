@@ -129,7 +129,7 @@ void update_ship_state(
 ) {
     EntityId id = ship->id;
 
-    // Step 6 (done): Endgame recall: force returning when remaining turns are low
+    // Endgame recall: force returning when remaining turns are low
     Position nearest_deposit_pos = get_nearest_deposit_position(me, game_map_ptr, ship->position);
     int dist_to_deposit = game_map_ptr->calculate_distance(ship->position, nearest_deposit_pos);
 
@@ -137,7 +137,7 @@ void update_ship_state(
         mem.ship_status[id] = ShipState::RETURNING;
     }
 
-    // Step 2 (done): Add persistent per-ship state machine (MINING/RETURNING)
+    // Add persistent per-ship state machine (MINING/RETURNING)
     if (mem.ship_status[id] == ShipState::RETURNING) {
         if (ship->position == nearest_deposit_pos) {
             // If we're on the shipyard, we go back to mining
@@ -224,7 +224,7 @@ Command finalize_and_reserve_move(
     Direction intended_direction,
     vector<vector<bool>>& next_turn_occupied
 ) {
-    // Step 4 (done): Add collision avoidance between our own ships (reserve destinations each turn)
+    // Add collision avoidance between our own ships (reserve destinations each turn)
     Command final_command = ship->stay_still(); // Don't move by default (in case we need to stay still due to collisions)
     Position final_target = ship->position;     // Target position we intend to move to (initially our current position)
 

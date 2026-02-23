@@ -15,7 +15,7 @@ enum class ShipState {
 };
 
 struct ShipMemory {
-    // Map to memorize the state of each ship between turns (step 2)
+    // Map to memorize the state of each ship between turns
     unordered_map<EntityId, ShipState> ship_status;
     // Map to memorize a mining target for each ship between turns
     unordered_map<EntityId, Position> ship_target;

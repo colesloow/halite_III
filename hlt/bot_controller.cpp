@@ -115,7 +115,7 @@ vector<Command> BotController::play_turn(Game& game) {
         // even if we end up staying still, we will reserve it again with finalize_and_reserve_move
         next_turn_occupied[ship->position.y][ship->position.x] = false;
 
-        // Dropoff construction logic (step 7)
+        // Dropoff construction logic
         // Construction is considered only if we have the budget and enough time left
         // Keeping a security margin (SHIP_COST) to be able to spawn after if needed
         if (try_build_dropoff(ship, me, game_map.get(), turns_remaining, command_queue, next_turn_occupied)) {
@@ -144,7 +144,7 @@ vector<Command> BotController::play_turn(Game& game) {
             }
         }
 
-        // Targeting (step 4)
+        // Targeting
         Direction intended_direction = Direction::STILL;
         bool is_ship_inspired = inspired[ship->position.y][ship->position.x]; // Get inspiration status
 
@@ -165,7 +165,6 @@ vector<Command> BotController::play_turn(Game& game) {
         command_queue.push_back(
             finalize_and_reserve_move(ship, game_map.get(), intended_direction, next_turn_occupied)
         );
-        // TODO(step 8): Consider enemy proximity (risk, inspiration)
     }
 
     try_spawn(me, game_map.get(), turns_remaining, next_turn_occupied, command_queue, dynamic_max_ships);

@@ -8,7 +8,7 @@ void try_spawn(
     vector<Command>& command_queue,
     int max_ships
 ) {
-    // Step 5 (done): Improve spawn logic (stop earlier, avoid congestion)
+    // Improve spawn logic (stop earlier, avoid congestion)
     Position yard_pos = me->shipyard->position;
 
     // Count our ships close to shipyard to avoid congestion

@@ -34,7 +34,7 @@ bool try_build_dropoff(
 	// Dynamic timing: The larger the map, the more time we need to make it worth building a dropoff
     int min_turns_for_roi = game_map_ptr->width * 2 + 20;
 
-    // Dropoff construction logic (step 7)
+    // Dropoff construction logic
     // Construction is considered only if we have the budget and enough time left
     // Keeping a security margin (SHIP_COST) to be able to spawn after if needed
     if (me->halite >= DROPOFF_COST + constants::SHIP_COST &&
