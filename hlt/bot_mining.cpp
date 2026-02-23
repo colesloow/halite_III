@@ -61,14 +61,14 @@ Position pick_mining_target(
 
 Direction decide_mining_direction(
     const shared_ptr<Ship>& ship,
-    GameMap* game_map,
+    GameMap* game_map_ptr,
     ShipMemory& mem,
     const vector<vector<bool>>& next_turn_occupied,
     const vector<vector<bool>>& danger_map,
     const vector<vector<bool>>& inspired,
     vector<vector<bool>>& claimed_targets
 ) {
-    int halite_here = game_map->at(ship)->halite;
+    int halite_here = game_map_ptr->at(ship)->halite;
 
     // If current cell is rich enough, stay and mine
     // Apply inspiration bonus as an "effective halite" heuristic
@@ -82,13 +82,13 @@ Direction decide_mining_direction(
     }
 
     Position current_target = mem.ship_target[ship->id];
-    int target_halite_raw = game_map->at(current_target)->halite;
+    int target_halite_raw = game_map_ptr->at(current_target)->halite;
 
     // If target reached or became poor, choose a new one
     if (ship->position == current_target || target_halite_raw < MIN_TARGET_HALITE) {
-        mem.ship_target[ship->id] = pick_mining_target(ship->position, game_map, inspired, claimed_targets);
+        mem.ship_target[ship->id] = pick_mining_target(ship->position, game_map_ptr, inspired, claimed_targets);
         current_target = mem.ship_target[ship->id];
     }
 
-    return smart_navigate(ship, game_map, current_target, next_turn_occupied, danger_map);
+    return smart_navigate(ship, game_map_ptr, current_target, next_turn_occupied, danger_map);
 }

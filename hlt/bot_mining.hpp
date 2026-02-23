@@ -23,7 +23,7 @@ Position pick_mining_target(
 
 Direction decide_mining_direction(
     const shared_ptr<Ship>& ship,
-    GameMap* game_map,
+    GameMap* game_map_ptr,
     ShipMemory& mem,
     const vector<vector<bool>>& next_turn_occupied,
     const vector<vector<bool>>& danger_map,

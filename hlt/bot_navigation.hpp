@@ -11,7 +11,7 @@ using namespace hlt;
 
 Direction smart_navigate(
     const shared_ptr<Ship>& ship,
-    GameMap* game_map,
+    GameMap* game_map_ptr,
     const Position& target,
     const vector<vector<bool>>& next_turn_occupied,
     const vector<vector<bool>>& danger_map
@@ -19,14 +19,14 @@ Direction smart_navigate(
 
 Position get_nearest_deposit_position(
     const shared_ptr<Player>& me,
-    GameMap* game_map,
+    GameMap* game_map_ptr,
     const Position& from
 );
 
 void update_ship_state(
     const shared_ptr<Ship>& ship,
     const shared_ptr<Player>& me,
-    GameMap* game_map,
+    GameMap* game_map_ptr,
     int turns_remaining,
     ShipMemory& mem
 );
@@ -34,7 +34,7 @@ void update_ship_state(
 Direction decide_returning_direction(
     const shared_ptr<Ship>& ship,
     const shared_ptr<Player>& me,
-    GameMap* game_map,
+    GameMap* game_map_ptr,
     const vector<vector<bool>>& next_turn_occupied,
     const vector<vector<bool>>& danger_map,
     bool is_inspired
@@ -42,13 +42,13 @@ Direction decide_returning_direction(
 
 Direction apply_move_cost_safety(
     const shared_ptr<Ship>& ship,
-    GameMap* game_map,
+    GameMap* game_map_ptr,
     Direction intended_direction
 );
 
 Command finalize_and_reserve_move(
     const shared_ptr<Ship>& ship,
-    GameMap* game_map,
+    GameMap* game_map_ptr,
     Direction intended_direction,
     vector<vector<bool>>& next_turn_occupied
 );

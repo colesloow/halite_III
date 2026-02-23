@@ -11,7 +11,7 @@ using namespace hlt;
 
 void try_spawn(
     const shared_ptr<Player>& me,
-    GameMap* game_map,
+    GameMap* game_map_ptr,
     int turns_remaining,
     vector<vector<bool>>& next_turn_occupied,
     vector<Command>& command_queue,

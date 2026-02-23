@@ -2,7 +2,7 @@
 
 void try_spawn(
     const shared_ptr<Player>& me,
-    GameMap* game_map,
+    GameMap* game_map_ptr,
     int turns_remaining,
     vector<vector<bool>>& next_turn_occupied,
     vector<Command>& command_queue,
@@ -15,7 +15,7 @@ void try_spawn(
     int nearby_ships = 0;
     for (const auto& ship_entry : me->ships) {
         shared_ptr<Ship> ship = ship_entry.second;
-        int dist = game_map->calculate_distance(ship->position, yard_pos);
+        int dist = game_map_ptr->calculate_distance(ship->position, yard_pos);
         if (dist <= CONGESTION_RADIUS) {
             nearby_ships++;
         }
